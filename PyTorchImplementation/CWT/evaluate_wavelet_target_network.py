@@ -266,8 +266,8 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         X_fine_tune = X_fine_tune[int(len(X_fine_tune) * 0.1):]
         Y_fine_tune = Y_fine_tune[int(len(Y_fine_tune) * 0.1):]
 
-        print(torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)).size(0))
-        print(np.shape(np.array(X_fine_tune, dtype=np.float32)))
+        # print(torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)).size(0))
+        # print(np.shape(np.array(X_fine_tune, dtype=np.float32)))
         train = TensorDataset(torch.from_numpy(np.array(X_fine_tune, dtype=np.float32)),
                               torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)))
         validation = TensorDataset(torch.from_numpy(np.array(valid_examples, dtype=np.float32)),
@@ -375,8 +375,8 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
         # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
 
-    print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_0).mean())
-    print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
+    # print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_0).mean())
+    # print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
     return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_test_0, f1_macro_test_1, conf_matrix_0, conf_matrix_1, report_0, report_1
 
 def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
@@ -517,22 +517,22 @@ if __name__ == '__main__':
 
     # Comment between here
 
-    datasets_pre_training = np.load("saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
+    datasets_pre_training = np.load("/content/drive/MyDrive/BME544Project/saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
     examples_pre_training, labels_pre_training = datasets_pre_training
 
     calculate_pre_training(examples_pre_training, labels_pre_training)
 
     # And here if the pre-training of the network was already completed.
 
-    datasets_training = np.load("saved_dataset_training.p", encoding="bytes", allow_pickle=True)
+    datasets_training = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_training.p", encoding="bytes", allow_pickle=True)
     examples_training, labels_training = datasets_training
 
-    datasets_validation0 = np.load("saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
+    datasets_validation0 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
     examples_validation0, labels_validation0 = datasets_validation0
 
-    datasets_validation1 = np.load("saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
+    datasets_validation1 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
     examples_validation1, labels_validation1 = datasets_validation1
-    print("SHAPE", np.shape(examples_training))
+    # print("SHAPE", np.shape(examples_training))
 
     accuracy_one_by_one = []
     array_training_error = []
