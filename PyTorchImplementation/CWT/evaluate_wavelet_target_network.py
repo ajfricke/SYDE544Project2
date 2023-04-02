@@ -485,31 +485,31 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
 
 if __name__ == '__main__':
 
-    examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
-                                                type='training0')
-
-    datasets = [examples, labels]
-    np.save("saved_dataset_training.p", datasets)
-
-    examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
-                                                type='Validation0')
-
-    datasets = [examples, labels]
-    np.save("saved_dataset_test0.p", datasets)
-
-    examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
-                                                type='Validation1')
-
-    datasets = [examples, labels]
-    np.save("saved_dataset_test1.p", datasets)
+    # examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
+    #                                             type='training0')
+    #
+    # datasets = [examples, labels]
+    # np.save("saved_dataset_training.p", datasets)
+    #
+    # examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
+    #                                             type='Validation0')
+    #
+    # datasets = [examples, labels]
+    # np.save("saved_dataset_test0.p", datasets)
+    #
+    # examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
+    #                                             type='Validation1')
+    #
+    # datasets = [examples, labels]
+    # np.save("saved_dataset_test1.p", datasets)
 
 
     # Comment between here
 
-    examples, labels = load_pre_training_dataset.read_data('PreTrainingDataset')
-    datasets = [examples, labels]
-
-    pickle.dump(datasets, open("saved_pre_training_dataset_pickle.p", "wb"))
+    # examples, labels = load_pre_training_dataset.read_data('PreTrainingDataset')
+    # datasets = [examples, labels]
+    #
+    # pickle.dump(datasets, open("saved_pre_training_dataset_pickle.p", "wb"))
 
     # np.save("saved_pre_training_dataset.p", datasets)
 
