@@ -331,13 +331,13 @@ if __name__ == '__main__':
 
     print(os.listdir("../"))
 
-    datasets_training = np.load("saved_dataset_training.p", encoding="bytes", allow_pickle=True)
+    datasets_training = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_training.p", encoding="bytes", allow_pickle=True)
     examples_training, labels_training = datasets_training
 
-    datasets_validation0 = np.load("saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
+    datasets_validation0 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
     examples_validation0, labels_validation0 = datasets_validation0
 
-    datasets_validation1 = np.load("saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
+    datasets_validation1 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
     examples_validation1, labels_validation1 = datasets_validation1
     # print("SHAPE", np.shape(examples_training))
 
@@ -378,7 +378,9 @@ if __name__ == '__main__':
         cm_0.append(conf_matrix_0)
         cm_1.append(conf_matrix_1)
 
-    with open("cnn_source_results_2.txt", "a") as myfile:
+    result_name = "cnn_source_results_3.txt"
+
+    with open(result_name, "a") as myfile:
         myfile.write("CNN STFT: \n\n")
         myfile.write("Accuracy 0: \n")
         myfile.write(str(np.mean(acc_0, axis=0)) + '\n')
@@ -411,11 +413,21 @@ if __name__ == '__main__':
         myfile.write('\n'.join(str(report_1) for report in report_1))
 
         myfile.write("Average: \n")
-        myfile.write(np.mean(acc_0) + np.mean(acc_1)) / 2.
+        myfile.write(str(np.mean(acc_0) + np.mean(acc_1) / 2.))
         myfile.write("Balanced Accuracy Score: \n")
-        myfile.write(np.mean(bal_0) + np.mean(bal_1)) / 2.
+        myfile.write(str(np.mean(bal_0) + np.mean(bal_1) / 2.))
         myfile.write("F1 Macro: \n")
-        myfile.write(np.mean(f1_0) + np.mean(f1_1)) / 2.
+        myfile.write(str(np.mean(f1_0) + np.mean(f1_1) / 2.))
         myfile.write("Confusion Matrix: \n")
         myfile.write(str(np.mean([np.mean(cm_0, axis=0),np.mean(cm_1, axis=0)], axis=0)) + '\n')
         myfile.write("\n\n\n")
+
+        for report in report_0:
+            with open(result_name, "a") as myfile:
+                myfile.write("Classification Report 0: \n")
+                myfile.write(report)
+
+        for report in report_1:
+            with open(result_name, "a") as myfile:
+                myfile.write("Classification Report 1: \n")
+                myfile.write(report)
