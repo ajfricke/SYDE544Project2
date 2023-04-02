@@ -285,7 +285,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
                 if epoch_loss+precision < best_loss:
                     print("New best validation loss:", epoch_loss)
                     best_loss = epoch_loss
-                    torch.save(cnn.state_dict(), 'best_weights_source_wavelet.pt')
+                    torch.save(cnn.state_dict(), '/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
                     patience = patience_increase + epoch
         print("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - epoch_start))
@@ -299,7 +299,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
         time_elapsed // 60, time_elapsed % 60))
     print('Best val loss: {:4f}'.format(best_loss))
     # load best model weights
-    cnn_weights = torch.load('best_weights_source_wavelet.pt')
+    cnn_weights = torch.load('/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
     cnn.load_state_dict(cnn_weights)
     cnn.eval()
     return cnn

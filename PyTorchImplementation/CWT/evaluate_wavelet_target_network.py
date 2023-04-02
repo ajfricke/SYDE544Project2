@@ -217,7 +217,7 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
     print('Best val loss: {:4f}'.format(best_loss))
 
     # Save the best weights found to file
-    torch.save(best_weights, 'best_pre_train_weights_target_wavelet.pt')
+    torch.save(best_weights, '/content/drive/MyDrive/BME544Project/best_pre_train_weights_target_wavelet.pt')
 
 def calculate_fitness(examples_training, labels_training, examples_test_0, labels_test_0, examples_test_1,
                       labels_test_1):
@@ -284,7 +284,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         test_0_loader = torch.utils.data.DataLoader(test_0, batch_size=1, shuffle=False)
         test_1_loader = torch.utils.data.DataLoader(test_1, batch_size=1, shuffle=False)
 
-        pre_trained_weights = torch.load('best_pre_train_weights_target_wavelet.pt')
+        pre_trained_weights = torch.load('/content/drive/MyDrive/BME544Project/best_pre_train_weights_target_wavelet.pt')
 
         cnn = Wavelet_CNN_Target_Network.TargetNetwork(number_of_class=7,
                                                        weights_pre_trained_cnn=pre_trained_weights).cuda()
@@ -476,7 +476,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
         time_elapsed // 60, time_elapsed % 60))
     print('Best val loss: {:4f}'.format(best_loss))
     # Save to file the best weights found
-    torch.save(best_weights, 'best_weights_source_wavelet.pt')
+    torch.save(best_weights, '/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
     # load best model weights
     cnn.load_state_dict(copy.deepcopy(best_weights))
     cnn.eval()
@@ -572,9 +572,9 @@ if __name__ == '__main__':
         cm_0.append(conf_matrix_0)
         cm_1.append(conf_matrix_1)
 
-        result_name = "cnn_source_results_3.txt"
+        result_path = "cnn_source_results_3.txt"
 
-        with open(result_name, "a") as myfile:
+        with open(result_path, "a") as myfile:
             myfile.write("CNN STFT: \n\n")
             myfile.write("Accuracy 0: \n")
             myfile.write(str(np.mean(acc_0, axis=0)) + '\n')
@@ -613,12 +613,12 @@ if __name__ == '__main__':
             myfile.write("\n\n\n")
 
             for report in report_0:
-                with open(result_name, "a") as myfile:
+                with open(result_path, "a") as myfile:
                     myfile.write("Classification Report 0: \n")
                     myfile.write(report)
 
             for report in report_1:
-                with open(result_name, "a") as myfile:
+                with open(result_path, "a") as myfile:
                     myfile.write("Classification Report 1: \n")
                     myfile.write(report)
 
