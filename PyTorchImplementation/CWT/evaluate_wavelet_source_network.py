@@ -393,7 +393,7 @@ if __name__ == '__main__':
         myfile.write(str(np.mean(cm_0, axis=0)) + '\n')
         myfile.write(str(np.mean(np.mean(cm_0, axis=0))) + '\n')
         myfile.write("Classification Report 0: \n")
-        myfile.write(report_0)
+        myfile.write('\n'.join(str(report_0) for report in report_0))
 
         myfile.write("Accuracy 1: \n")
         myfile.write(str(np.mean(acc_1, axis=0)) + '\n')
@@ -408,7 +408,7 @@ if __name__ == '__main__':
         myfile.write(str(np.mean(cm_1, axis=0)) + '\n')
         myfile.write(str(np.mean(np.mean(cm_1, axis=0))) + '\n')
         myfile.write("Classification Report 1: \n")
-        myfile.write(report_1)
+        myfile.write('\n'.join(str(report_1) for report in report_1))
 
         myfile.write("Average: \n")
         myfile.write(np.mean(acc_0) + np.mean(acc_1)) / 2.

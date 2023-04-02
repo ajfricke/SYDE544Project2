@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 import time
 from scipy.stats import mode
+import load_evaluation_dataset
 import load_pre_training_dataset
 import copy
 from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, confusion_matrix, classification_report
@@ -220,8 +221,8 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
 
 def calculate_fitness(examples_training, labels_training, examples_test_0, labels_test_0, examples_test_1,
                       labels_test_1):
-    accuracy_test0 = []
-    accuracy_test1 = []
+    # accuracy_test0 = []
+    # accuracy_test1 = []
     accuracy_0 = []
     accuracy_1 = []
     balanced_accuracy_0 = []
@@ -332,9 +333,10 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         balanced_accuracy_0.append(balanced_accuracy_score(all_ground_truth_labels_0, all_predicted_labels_0))
         f1_macro_test_0.append(f1_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
         conf_matrix_0.append(confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0))
+        report_0.append(classification_report(all_ground_truth_labels_0, all_predicted_labels_0))
 
         print("ACCURACY TEST_0 FINAL : %.3f %%" % (100 * float(correct_prediction_test_0) / float(total)))
-        accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
+        # accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
 
         total = 0
         correct_prediction_test_1 = 0
@@ -369,14 +371,13 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         balanced_accuracy_1.append(balanced_accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
         f1_macro_test_1.append(f1_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
         conf_matrix_1.append(confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1))
-
+        report_1.append(classification_report(all_ground_truth_labels_1, all_predicted_labels_1))
         print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
-        accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
+        # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
 
-    print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_test0).mean())
-    print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_test1).mean())
-    return accuracy_test0, accuracy_test1, accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_test_0, f1_macro_test_1, conf_matrix_0, conf_matrix_1
-
+    print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_0).mean())
+    print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
+    return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_test_0, f1_macro_test_1, conf_matrix_0, conf_matrix_1, report_0, report_1
 
 def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
     since = time.time()
@@ -483,34 +484,34 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
 
 
 if __name__ == '__main__':
-    '''
-    examples, labels = load_evaluation_dataset.read_data('../../EvaluationDataset',
+
+    examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
                                                 type='training0')
 
     datasets = [examples, labels]
     np.save("saved_dataset_training.p", datasets)
 
-    examples, labels = load_evaluation_dataset.read_data('../../EvaluationDataset',
+    examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
                                                 type='Validation0')
 
     datasets = [examples, labels]
     np.save("saved_dataset_test0.p", datasets)
 
-    examples, labels = load_evaluation_dataset.read_data('../../EvaluationDataset',
+    examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
                                                 type='Validation1')
 
     datasets = [examples, labels]
     np.save("saved_dataset_test1.p", datasets)
-    '''
+
 
     # Comment between here
 
-    # examples, labels = load_pre_training_dataset.read_data('PreTrainingDataset')
-    # datasets = [examples, labels]
-    #
-    # pickle.dump(datasets, open("saved_pre_training_dataset_pickle.p", "wb"))
-    #
-    ## np.save("saved_pre_training_dataset.p", datasets)
+    examples, labels = load_pre_training_dataset.read_data('PreTrainingDataset')
+    datasets = [examples, labels]
+
+    pickle.dump(datasets, open("saved_pre_training_dataset_pickle.p", "wb"))
+
+    # np.save("saved_pre_training_dataset.p", datasets)
 
     # And here if the pre-training dataset was already processed and saved
 
@@ -537,8 +538,8 @@ if __name__ == '__main__':
     array_training_error = []
     array_validation_error = []
 
-    test_0 = []
-    test_1 = []
+    # test_0 = []
+    # test_1 = []
 
     acc_0 = []
     acc_1 = []
@@ -548,19 +549,20 @@ if __name__ == '__main__':
     f1_1 = []
     cm_0 = []
     cm_1 = []
+    report_0 = []
+    report_1 = []
 
     for i in range(3):
         print("ROUND: ", i)
-        accuracy_test_0, accuracy_test_1, accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, conf_matrix_0, conf_matrix_1 = calculate_fitness(examples_training, labels_training,
-                                                             examples_validation0, labels_validation0,
-                                                             examples_validation1, labels_validation1)
-        print(accuracy_test_0)
+        accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, conf_matrix_0, conf_matrix_1, report_0, report_1 = calculate_fitness(
+            examples_training, labels_training,
+            examples_validation0, labels_validation0,
+            examples_validation1, labels_validation1)
+        print(accuracy_0)
 
-        test_0.append(accuracy_test_0)
-        test_1.append(accuracy_test_1)
-        print("TEST 0 SO FAR: ", test_0)
-        print("TEST 1 SO FAR: ", test_1)
-        print("CURRENT AVERAGE : ", (np.mean(test_0) + np.mean(test_1)) / 2.)
+        # print("TEST 0 SO FAR: ", test_0, "ACCURACY FINAL TEST 0: ", np.mean(test_0))
+        # print("TEST 1 SO FAR: ", test_1, "ACCURACY FINAL TEST 1: ", np.mean(test_1))
+        # print("CURRENT AVERAGE : ", (np.mean(test_0) + np.mean(test_1)) / 2.)
         acc_0.append(accuracy_0)
         acc_1.append(accuracy_1)
         bal_0.append(balanced_accuracy_0)
@@ -570,11 +572,8 @@ if __name__ == '__main__':
         cm_0.append(conf_matrix_0)
         cm_1.append(conf_matrix_1)
 
-    with open("cnn_target_results.txt", "a") as myfile:
+    with open("cnn_source_results_2.txt", "a") as myfile:
         myfile.write("CNN STFT: \n\n")
-        myfile.write("Test 0: \n")
-        myfile.write(str(np.mean(test_0, axis=0)) + '\n')
-        myfile.write(str(np.mean(test_0)) + '\n')
         myfile.write("Accuracy 0: \n")
         myfile.write(str(np.mean(acc_0, axis=0)) + '\n')
         myfile.write(str(np.mean(acc_0)) + '\n')
@@ -586,11 +585,10 @@ if __name__ == '__main__':
         myfile.write(str(np.mean(f1_0)) + '\n')
         myfile.write("Confusion Matrix 0: \n")
         myfile.write(str(np.mean(cm_0, axis=0)) + '\n')
-        myfile.write(str(np.mean(cm_0)) + '\n')
+        myfile.write(str(np.mean(np.mean(cm_0, axis=0))) + '\n')
+        myfile.write("Classification Report 0: \n")
+        myfile.write(''.join(str(report_0) for report in report_0))
 
-        myfile.write("Test 1: \n")
-        myfile.write(str(np.mean(test_1, axis=0)) + '\n')
-        myfile.write(str(np.mean(test_1)) + '\n')
         myfile.write("Accuracy 1: \n")
         myfile.write(str(np.mean(acc_1, axis=0)) + '\n')
         myfile.write(str(np.mean(acc_1)) + '\n')
@@ -602,10 +600,21 @@ if __name__ == '__main__':
         myfile.write(str(np.mean(f1_1)) + '\n')
         myfile.write("Confusion Matrix 1: \n")
         myfile.write(str(np.mean(cm_1, axis=0)) + '\n')
-        myfile.write(str(np.mean(cm_1)) + '\n')
+        myfile.write(str(np.mean(np.mean(cm_1, axis=0))) + '\n')
+        myfile.write("Classification Report 1: \n")
+        myfile.write('\n'.join(str(report_1) for report in report_1))
+
+        myfile.write("Average: \n")
+        myfile.write(np.mean(acc_0) + np.mean(acc_1)) / 2.
+        myfile.write("Balanced Accuracy Score: \n")
+        myfile.write(np.mean(bal_0) + np.mean(bal_1)) / 2.
+        myfile.write("F1 Macro: \n")
+        myfile.write(np.mean(f1_0) + np.mean(f1_1)) / 2.
+        myfile.write("Confusion Matrix: \n")
+        myfile.write(str(np.mean([np.mean(cm_0, axis=0), np.mean(cm_1, axis=0)], axis=0)) + '\n')
         myfile.write("\n\n\n")
 
-        print("ACCURACY FINAL TEST 0: ", test_0)
-        print("ACCURACY FINAL TEST 0: ", np.mean(test_0))
-        print("ACCURACY FINAL TEST 1: ", test_1)
-        print("ACCURACY FINAL TEST 1: ", np.mean(test_1))
+        # print("ACCURACY FINAL TEST 0: ", test_0)
+        # print("ACCURACY FINAL TEST 0: ", np.mean(test_0))
+        # print("ACCURACY FINAL TEST 1: ", test_1)
+        # print("ACCURACY FINAL TEST 1: ", np.mean(test_1))
