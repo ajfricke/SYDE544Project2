@@ -7,7 +7,8 @@ import torch
 from torch.autograd import Variable
 import time
 from scipy.stats import mode
-from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, confusion_matrix, classification_report
+import matplotlib as plt
+from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay
 import torch.nn.functional as f
 import load_evaluation_dataset
 import pickle
@@ -53,12 +54,16 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
     accuracy_1 = []
     balanced_accuracy_0 = []
     balanced_accuracy_1 = []
-    f1_macro_test_0 = []
-    f1_macro_test_1 = []
-    conf_matrix_0 = []
-    conf_matrix_1 = []
-    report_0 = []
-    report_1 = []
+    f1_macro_0 = []
+    f1_macro_1 = []
+    precision_score_0 = []
+    precision_score_1 = []
+    recall_score_0 = []
+    recall_score_1 = []
+    # conf_matrix_0 = []
+    # conf_matrix_1 = []
+    # report_0 = []
+    # report_1 = []
 
     # initialized_weights = np.load("initialized_weights.npy")
     for dataset_index in range(0, 17):
@@ -155,9 +160,16 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         # Calculate the metrics
         accuracy_0.append(accuracy_score(all_ground_truth_labels_0, all_predicted_labels_0))
         balanced_accuracy_0.append(balanced_accuracy_score(all_ground_truth_labels_0, all_predicted_labels_0))
-        f1_macro_test_0.append(f1_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
-        conf_matrix_0.append(confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0))
-        report_0.append(classification_report(all_ground_truth_labels_0, all_predicted_labels_0))
+        f1_macro_0.append(f1_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
+        precision_score_0.append(precision_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
+        recall_score_0.append(recall_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
+        cm = confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0, number_class=7)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        plt.figure()
+        disp.plot()
+        plt.savefig(f'Confusion_Matrix_1_{dataset_index}')
+        # conf_matrix_0.append(confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0))
+        # report_0.append(classification_report(all_ground_truth_labels_0, all_predicted_labels_0))
 
         print("ACCURACY TEST_0 FINAL : %.3f %%" % (100 * float(correct_prediction_test_0) / float(total)))
         # accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
@@ -193,15 +205,22 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         # Calculate the metrics
         accuracy_1.append(accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
         balanced_accuracy_1.append(balanced_accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
-        f1_macro_test_1.append(f1_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
-        conf_matrix_1.append(confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1))
-        report_1.append(classification_report(all_ground_truth_labels_1, all_predicted_labels_1))
+        f1_macro_1.append(f1_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
+        precision_score_1.append(precision_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
+        recall_score_1.append(recall_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
+        cm = confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1, number_class=7)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        plt.figure()
+        disp.plot()
+        plt.savefig(f'Confusion_Matrix_1_{dataset_index}')
+        # conf_matrix_1.append(confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1))
+        # report_1.append(classification_report(all_ground_truth_labels_1, all_predicted_labels_1))
         print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
         # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
 
     print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_0).mean())
     print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
-    return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_test_0, f1_macro_test_1, conf_matrix_0, conf_matrix_1, report_0, report_1
+    return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, precision_score_0, precision_score_1, recall_score_0, recall_score_1
 
 
 def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
@@ -268,7 +287,6 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
                     loss = loss_intermediary/total_sub_pass
 
 
-
                 # statistics
                 running_loss += loss
                 running_corrects += torch.sum(predictions == labels.data)
@@ -285,7 +303,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
                 if epoch_loss+precision < best_loss:
                     print("New best validation loss:", epoch_loss)
                     best_loss = epoch_loss
-                    torch.save(cnn.state_dict(), '/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
+                    torch.save(cnn.state_dict(), 'best_weights_source_wavelet.pt')
                     patience = patience_increase + epoch
         print("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - epoch_start))
@@ -299,7 +317,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
         time_elapsed // 60, time_elapsed % 60))
     print('Best val loss: {:4f}'.format(best_loss))
     # load best model weights
-    cnn_weights = torch.load('/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
+    cnn_weights = torch.load('best_weights_source_wavelet.pt')
     cnn.load_state_dict(cnn_weights)
     cnn.eval()
     return cnn
@@ -331,13 +349,13 @@ if __name__ == '__main__':
 
     print(os.listdir("../"))
 
-    datasets_training = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_training.p", encoding="bytes", allow_pickle=True)
+    datasets_training = np.load("saved_dataset_training.p", encoding="bytes", allow_pickle=True)
     examples_training, labels_training = datasets_training
 
-    datasets_validation0 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
+    datasets_validation0 = np.load("saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
     examples_validation0, labels_validation0 = datasets_validation0
 
-    datasets_validation1 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
+    datasets_validation1 = np.load("saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
     examples_validation1, labels_validation1 = datasets_validation1
     # print("SHAPE", np.shape(examples_training))
 
@@ -354,14 +372,18 @@ if __name__ == '__main__':
     bal_1 = []
     f1_0 = []
     f1_1 = []
-    cm_0 = []
-    cm_1 = []
-    report_0 = []
-    report_1 = []
+    precision_0 = []
+    precision_1 = []
+    recall_0 = []
+    recall_1 = []
+    # cm_0 = []
+    # cm_1 = []
+    # report_0 = []
+    # report_1 = []
 
     for i in range(3):
         print("ROUND: ", i)
-        accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, conf_matrix_0, conf_matrix_1, report_0, report_1 = calculate_fitness(examples_training, labels_training,
+        accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, precision_score_0, precision_score_1, recall_score_0, recall_score_1 = calculate_fitness(examples_training, labels_training,
                                                                examples_validation0, labels_validation0,
                                                                examples_validation1, labels_validation1)
         print(accuracy_0)
@@ -375,59 +397,79 @@ if __name__ == '__main__':
         bal_1.append(balanced_accuracy_1)
         f1_0.append(f1_macro_0)
         f1_1.append(f1_macro_1)
-        cm_0.append(conf_matrix_0)
-        cm_1.append(conf_matrix_1)
+        # cm_0.append(conf_matrix_0)
+        # cm_1.append(conf_matrix_1)
+        precision_0.append(precision_score_0)
+        precision_1.append(precision_score_1)
+        recall_0.append(recall_score_0)
+        recall_1.append(recall_score_1)
 
-    result_name = "cnn_source_results_3.txt"
+        result_name = "cnn_lstm_source_results.txt"
 
-    with open(result_name, "a") as myfile:
-        myfile.write("CNN STFT: \n\n")
-        myfile.write("Accuracy 0: \n")
-        myfile.write(str(np.mean(acc_0, axis=0)) + '\n')
-        myfile.write(str(np.mean(acc_0)) + '\n')
-        myfile.write("Balanced Accuracy Score 0: \n")
-        myfile.write(str(np.mean(bal_0, axis=0)) + '\n')
-        myfile.write(str(np.mean(bal_0)) + '\n')
-        myfile.write("F1 Macro 0: \n")
-        myfile.write(str(np.mean(f1_0, axis=0)) + '\n')
-        myfile.write(str(np.mean(f1_0)) + '\n')
-        myfile.write("Confusion Matrix 0: \n")
-        myfile.write(str(np.mean(cm_0, axis=0)) + '\n')
-        myfile.write(str(np.mean(np.mean(cm_0, axis=0))) + '\n')
-        myfile.write("Classification Report 0: \n")
-        myfile.write('\n'.join(str(report_0) for report in report_0))
+        with open(result_name, "w") as myfile:
+            myfile.write("CNN STFT: \n\n")
+            myfile.write("Accuracy 0: \n")
+            # myfile.write(str(np.mean(acc_0, axis=0)) + '\n')
+            myfile.write(str(np.mean(acc_0)) + '\n')
+            myfile.write("Balanced Accuracy Score 0: \n")
+            # myfile.write(str(np.mean(bal_0, axis=0)) + '\n')
+            myfile.write(str(np.mean(bal_0)) + '\n')
+            myfile.write("F1 Macro 0: \n")
+            # myfile.write(str(np.mean(f1_0, axis=0)) + '\n')
+            myfile.write(str(np.mean(f1_0)) + '\n\n')
+            myfile.write("Precision 1: \n")
+            # myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(precision_0)) + '\n')
+            myfile.write("Recall: \n")
+            # myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(recall_0)) + '\n\n')
+            # myfile.write("Confusion Matrix 0: \n")
+            # myfile.write(str(np.mean(cm_0, axis=0)) + '\n')
+            # myfile.write(str(np.mean(np.mean(cm_0, axis=0))) + '\n')
+            # myfile.write("Classification Report 0: \n")
+            # myfile.write('\n'.join(str(report_0) for report in report_0))
 
-        myfile.write("Accuracy 1: \n")
-        myfile.write(str(np.mean(acc_1, axis=0)) + '\n')
-        myfile.write(str(np.mean(acc_1)) + '\n')
-        myfile.write("Balanced Accuracy Score 1: \n")
-        myfile.write(str(np.mean(bal_1, axis=0)) + '\n')
-        myfile.write(str(np.mean(bal_1)) + '\n')
-        myfile.write("F1 Macro 1: \n")
-        myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
-        myfile.write(str(np.mean(f1_1)) + '\n')
-        myfile.write("Confusion Matrix 1: \n")
-        myfile.write(str(np.mean(cm_1, axis=0)) + '\n')
-        myfile.write(str(np.mean(np.mean(cm_1, axis=0))) + '\n')
-        myfile.write("Classification Report 1: \n")
-        myfile.write('\n'.join(str(report_1) for report in report_1))
+            myfile.write("Accuracy 1: \n")
+            # myfile.write(str(np.mean(acc_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(acc_1)) + '\n')
+            myfile.write("Balanced Accuracy Score 1: \n")
+            # myfile.write(str(np.mean(bal_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(bal_1)) + '\n')
+            myfile.write("F1 Macro 1: \n")
+            # myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(f1_1)) + '\n')
+            myfile.write("Precision 1: \n")
+            # myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(precision_1)) + '\n')
+            myfile.write("Recall: \n")
+            # myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
+            myfile.write(str(np.mean(recall_1)) + '\n\n')
+            # myfile.write("Confusion Matrix 1: \n")
+            # myfile.write(str(np.mean(cm_1, axis=0)) + '\n')
+            # myfile.write(str(np.mean(np.mean(cm_1, axis=0))) + '\n')
+            # myfile.write("Classification Report 1: \n")
+            # myfile.write('\n'.join(str(report_1) for report in report_1))
 
-        myfile.write("Average: \n")
-        myfile.write(str(np.mean(acc_0) + np.mean(acc_1) / 2.))
-        myfile.write("Balanced Accuracy Score: \n")
-        myfile.write(str(np.mean(bal_0) + np.mean(bal_1) / 2.))
-        myfile.write("F1 Macro: \n")
-        myfile.write(str(np.mean(f1_0) + np.mean(f1_1) / 2.))
-        myfile.write("Confusion Matrix: \n")
-        myfile.write(str(np.mean([np.mean(cm_0, axis=0),np.mean(cm_1, axis=0)], axis=0)) + '\n')
-        myfile.write("\n\n\n")
-
-        for report in report_0:
-            with open(result_name, "a") as myfile:
-                myfile.write("Classification Report 0: \n")
-                myfile.write(report)
-
-        for report in report_1:
-            with open(result_name, "a") as myfile:
-                myfile.write("Classification Report 1: \n")
-                myfile.write(report)
+            myfile.write("Average Accuracy: \n")
+            myfile.write(str(np.mean(acc_0) + np.mean(acc_1) / 2.) + '\n')
+            myfile.write("Average Balanced Accuracy Score: \n")
+            myfile.write(str(np.mean(bal_0) + np.mean(bal_1) / 2.) + '\n')
+            myfile.write("Average F1 Macro: \n")
+            myfile.write(str(np.mean(f1_0) + np.mean(f1_1) / 2.) + '\n')
+            myfile.write("Average Precision: \n")
+            myfile.write(str(np.mean(precision_0) + np.mean(precision_1) / 2.) + '\n')
+            myfile.write("Average Recall: \n")
+            myfile.write(str(np.mean(recall_0) + np.mean(recall_1) / 2.) + '\n')
+            # myfile.write("Confusion Matrix: \n")
+            # myfile.write(str(np.mean([np.mean(cm_0, axis=0),np.mean(cm_1, axis=0)], axis=0)) + '\n')
+            myfile.write("\n\n\n")
+        #
+        # for report in report_0:
+        #     with open(result_name, "a") as myfile:
+        #         myfile.write("Classification Report 0: \n")
+        #         myfile.write(report)
+        #
+        # for report in report_1:
+        #     with open(result_name, "a") as myfile:
+        #         myfile.write("Classification Report 1: \n")
+        #         myfile.write(report)

@@ -87,7 +87,7 @@ class SourceNetwork(nn.Module):
 
         self.initialize_weights()
 
-        print("Number Parameters: ", self.get_n_params())
+        # print("Number Parameters: ", self.get_n_params())
 
     def get_n_params(self):
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
@@ -133,7 +133,7 @@ class SourceNetwork(nn.Module):
         fc2_output = self._dropout_fc2(self._prelu_fc2(self._batch_norm_fc2(self._fc2(fc1_output))))
 
 
-        return nn.functional.log_softmax(self._output(fc2_output))
+        return nn.functional.log_softmax(self._output(fc2_output), dim = 1)
 
     def first_parallel(self, input_to_give, index):
         conv1_first_part1 = self._list_conv1_first_part[index](input_to_give)
@@ -253,7 +253,7 @@ class TargetNetwork(nn.Module):
         pre_trained_model = SourceNetwork(number_of_class=number_of_class)
         self._added_source_network_to_graph = nn.Sequential(*list(pre_trained_model.children()))
 
-        print("Number Parameters: ", self.get_n_params())
+        # print("Number Parameters: ", self.get_n_params())
 
 
 
@@ -293,10 +293,11 @@ class TargetNetwork(nn.Module):
     def initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                torch.nn.init.kaiming_normal(m.weight)
+                # torch.nn.init.kaiming_normal(m.weight)
+                torch.nn.init.kaiming_normal_(m.weight)
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
-                torch.nn.init.kaiming_normal(m.weight)
+                torch.nn.init.kaiming_normal_(m.weight)
                 m.bias.data.zero_()
 
     def forward(self, x):

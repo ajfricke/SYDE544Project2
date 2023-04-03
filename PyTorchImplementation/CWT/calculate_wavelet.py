@@ -26,7 +26,7 @@ def calculate_wavelet_vector(vector, mother_wavelet='mexh', scales=np.arange(1, 
     return coef
 
 def show_wavelet(coef):
-    print(np.shape(coef))
+    # print(np.shape(coef))
     plt.rcParams.update({'font.size': 36})
     plt.matshow(coef)
     plt.ylabel('Scale')

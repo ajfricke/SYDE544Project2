@@ -9,8 +9,9 @@ import time
 from scipy.stats import mode
 import load_evaluation_dataset
 import load_pre_training_dataset
+import matplotlib as plt
 import copy
-from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, confusion_matrix, classification_report, precision_score, recall_score, ConfusionMatrixDisplay
 import pickle
 
 
@@ -55,7 +56,7 @@ def calculate_pre_training(examples, labels):
                 labels_gesture_personne_valid.extend(labels[j][k])
                 labels_human_personne_valid.extend(human_number * np.ones(len(labels[j][k])))
 
-        print(np.shape(examples_personne_training))
+        # print(np.shape(examples_personne_training))
         examples_personne_scrambled, labels_gesture_personne_scrambled, labels_human_personne_scrambled = scramble(
             examples_personne_training, labels_gesture_personne_training, labels_human_personne_training)
 
@@ -74,10 +75,10 @@ def calculate_pre_training(examples, labels):
         list_validation_dataloader.append(validationLoader)
 
         human_number += 1
-        print("Shape training : ", np.shape(examples_personne_scrambled))
-        print("Shape valid : ", np.shape(examples_personne_scrambled_valid))
+        # print("Shape training : ", np.shape(examples_personne_scrambled))
+        # print("Shape valid : ", np.shape(examples_personne_scrambled_valid))
 
-    cnn = Wavelet_CNN_Target_Network.SourceNetwork(number_of_class=7, dropout_rate=.35).cuda()
+    cnn = Wavelet_CNN_Target_Network.SourceNetwork(number_of_class=7, dropout_rate=.35)
 
     criterion = nn.NLLLoss(size_average=False)
     optimizer = optim.Adam(cnn.parameters(), lr=0.0404709)
@@ -140,7 +141,7 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
                     # get the inputs
                     inputs, labels = data
 
-                    inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+                    inputs, labels = Variable(inputs), Variable(labels)
 
                     # zero the parameter gradients
                     optimizer.zero_grad()
@@ -150,24 +151,25 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
                         outputs = cnn(inputs)
                         _, predictions = torch.max(outputs.data, 1)
 
-                        loss = criterion(outputs, labels)
+                        loss = criterion(outputs, labels.long())
                         loss.backward()
                         optimizer.step()
-                        loss = loss.data[0]
+                        # print(loss.data)
+                        # loss = loss.data[0]
 
                     else:
                         cnn.eval()
 
-                        accumulated_predicted = Variable(torch.zeros(len(inputs), 7)).cuda()
+                        accumulated_predicted = Variable(torch.zeros(len(inputs), 7))
                         loss_intermediary = 0.
                         total_sub_pass = 0
                         for repeat in range(20):
                             outputs = cnn(inputs)
-                            loss = criterion(outputs, labels)
+                            loss = criterion(outputs, labels.long())
                             if loss_intermediary == 0.:
-                                loss_intermediary = loss.data[0]
+                                loss_intermediary = loss
                             else:
-                                loss_intermediary += loss.data[0]
+                                loss_intermediary += loss
                             _, prediction_from_this_sub_network = torch.max(outputs.data, 1)
                             accumulated_predicted[range(len(inputs)),
                                                   prediction_from_this_sub_network.cpu().numpy().tolist()] += 1
@@ -192,14 +194,14 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
 
             epoch_loss = running_loss / total
             epoch_acc = running_corrects / total
-            print('{} Loss: {:.8f} Acc: {:.8}'.format(
-                phase, epoch_loss, epoch_acc))
+            # print('{} Loss: {:.8f} Acc: {:.8}'.format(
+            #     phase, epoch_loss, epoch_acc))
 
             # deep copy the model
             if phase == 'val':
                 scheduler.step(epoch_loss)
                 if epoch_loss + precision < best_loss:
-                    print("New best validation loss:", epoch_loss)
+                    # print("New best validation loss:", epoch_loss)
                     best_loss = epoch_loss
                     best_weights = copy.deepcopy(cnn.state_dict())
                     patience = patience_increase + epoch
@@ -208,7 +210,7 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
         if epoch > patience:
             break
 
-    print()
+    # print()
 
     time_elapsed = time.time() - since
 
@@ -217,7 +219,7 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
     print('Best val loss: {:4f}'.format(best_loss))
 
     # Save the best weights found to file
-    torch.save(best_weights, '/content/drive/MyDrive/BME544Project/best_pre_train_weights_target_wavelet.pt')
+    torch.save(best_weights, 'original_best_pre_train_weights_target_wavelet.pt')
 
 def calculate_fitness(examples_training, labels_training, examples_test_0, labels_test_0, examples_test_1,
                       labels_test_1):
@@ -284,10 +286,10 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         test_0_loader = torch.utils.data.DataLoader(test_0, batch_size=1, shuffle=False)
         test_1_loader = torch.utils.data.DataLoader(test_1, batch_size=1, shuffle=False)
 
-        pre_trained_weights = torch.load('/content/drive/MyDrive/BME544Project/best_pre_train_weights_target_wavelet.pt')
+        pre_trained_weights = torch.load('original_best_pre_train_weights_target_wavelet.pt')
 
         cnn = Wavelet_CNN_Target_Network.TargetNetwork(number_of_class=7,
-                                                       weights_pre_trained_cnn=pre_trained_weights).cuda()
+                                                       weights_pre_trained_cnn=pre_trained_weights)
 
         criterion = nn.NLLLoss(size_average=False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, cnn.parameters()), lr=0.0404709)
@@ -308,7 +310,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         for k, data_test_0 in enumerate(test_0_loader, 0):
             # get the inputs
             inputs_test_0, ground_truth_test_0 = data_test_0
-            inputs_test_0, ground_truth_test_0 = Variable(inputs_test_0.cuda()), Variable(ground_truth_test_0.cuda())
+            inputs_test_0, ground_truth_test_0 = Variable(inputs_test_0), Variable(ground_truth_test_0)
 
             concat_input = inputs_test_0
             for i in range(20):
@@ -331,9 +333,14 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         # Calculate the metrics
         accuracy_0.append(accuracy_score(all_ground_truth_labels_0, all_predicted_labels_0))
         balanced_accuracy_0.append(balanced_accuracy_score(all_ground_truth_labels_0, all_predicted_labels_0))
-        f1_macro_test_0.append(f1_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
-        conf_matrix_0.append(confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0))
-        report_0.append(classification_report(all_ground_truth_labels_0, all_predicted_labels_0))
+        f1_macro_0.append(f1_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
+        precision_score_0.append(precision_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
+        recall_score_0.append(recall_score(all_ground_truth_labels_0, all_predicted_labels_0, average='macro'))
+        cm = confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0, number_class=7)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        plt.figure()
+        disp.plot()
+        plt.savefig(f'Confusion_Matrix_0_{dataset_index}')
 
         print("ACCURACY TEST_0 FINAL : %.3f %%" % (100 * float(correct_prediction_test_0) / float(total)))
         # accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
@@ -346,7 +353,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         for k, data_test_1 in enumerate(test_1_loader, 0):
             # get the inputs
             inputs_test_1, ground_truth_test_1 = data_test_1
-            inputs_test_1, ground_truth_test_1 = Variable(inputs_test_1.cuda()), Variable(ground_truth_test_1.cuda())
+            inputs_test_1, ground_truth_test_1 = Variable(inputs_test_1), Variable(ground_truth_test_1)
 
             concat_input = inputs_test_1
             for i in range(20):
@@ -369,15 +376,21 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         # Calculate the metrics
         accuracy_1.append(accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
         balanced_accuracy_1.append(balanced_accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
-        f1_macro_test_1.append(f1_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
-        conf_matrix_1.append(confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1))
-        report_1.append(classification_report(all_ground_truth_labels_1, all_predicted_labels_1))
+        f1_macro_1.append(f1_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
+        precision_score_1.append(precision_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
+        recall_score_1.append(recall_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
+        cm = confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1, number_class=7)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        plt.figure()
+        disp.plot()
+        plt.savefig(f'Confusion_Matrix_1_{dataset_index}')
+
         print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
         # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
 
     # print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_0).mean())
     # print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
-    return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_test_0, f1_macro_test_1, conf_matrix_0, conf_matrix_1, report_0, report_1
+    return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, precision_score_0, precision_score_1, recall_score_0, recall_score_1
 
 def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
     since = time.time()
@@ -409,7 +422,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
                 # get the inputs
                 inputs, labels = data
 
-                inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+                inputs, labels = Variable(inputs), Variable(labels)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -419,24 +432,24 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
                     outputs = cnn(inputs)
                     _, predictions = torch.max(outputs.data, 1)
 
-                    loss = criterion(outputs, labels)
+                    loss = criterion(outputs, labels.long())
                     loss.backward()
                     optimizer.step()
-                    loss = loss.data[0]
+                    # loss = loss.data[0]
 
                 else:
                     cnn.eval()
 
-                    accumulated_predicted = Variable(torch.zeros(len(inputs), 7)).cuda()
+                    accumulated_predicted = Variable(torch.zeros(len(inputs), 7))
                     loss_intermediary = 0.
                     total_sub_pass = 0
                     for repeat in range(20):
                         outputs = cnn(inputs)
-                        loss = criterion(outputs, labels)
+                        loss = criterion(outputs, labels.long())
                         if loss_intermediary == 0.:
-                            loss_intermediary = loss.data[0]
+                            loss_intermediary = loss
                         else:
-                            loss_intermediary += loss.data[0]
+                            loss_intermediary += loss
                         _, prediction_from_this_sub_network = torch.max(outputs.data, 1)
                         accumulated_predicted[range(len(inputs)),
                                               prediction_from_this_sub_network.cpu().numpy().tolist()] += 1
@@ -453,14 +466,14 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
 
             epoch_loss = running_loss / total
             epoch_acc = running_corrects / total
-            print('{} Loss: {:.8f} Acc: {:.8}'.format(
-                phase, epoch_loss, epoch_acc))
+            # print('{} Loss: {:.8f} Acc: {:.8}'.format(
+            #     phase, epoch_loss, epoch_acc))
 
             # deep copy the model
             if phase == 'val':
                 scheduler.step(epoch_loss)
                 if epoch_loss+precision < best_loss:
-                    print("New best validation loss:", epoch_loss)
+                    # print("New best validation loss:", epoch_loss)
                     best_loss = epoch_loss
                     best_weights = copy.deepcopy(cnn.state_dict())
                     patience = patience_increase + epoch
@@ -468,13 +481,13 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
             epoch + 1, num_epochs, time.time() - epoch_start))
         if epoch > patience:
             break
-    print()
+    # print()
 
     time_elapsed = time.time() - since
 
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
-    print('Best val loss: {:4f}'.format(best_loss))
+    # print('Best val loss: {:4f}'.format(best_loss))
     # Save to file the best weights found
     torch.save(best_weights, '/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
     # load best model weights
@@ -517,20 +530,20 @@ if __name__ == '__main__':
 
     # Comment between here
 
-    datasets_pre_training = np.load("/content/drive/MyDrive/BME544Project/saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
+    datasets_pre_training = np.load("saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
     examples_pre_training, labels_pre_training = datasets_pre_training
 
-    calculate_pre_training(examples_pre_training, labels_pre_training)
+    # calculate_pre_training(examples_pre_training, labels_pre_training)
 
     # And here if the pre-training of the network was already completed.
 
-    datasets_training = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_training.p", encoding="bytes", allow_pickle=True)
+    datasets_training = np.load("saved_dataset_training.p", encoding="bytes", allow_pickle=True)
     examples_training, labels_training = datasets_training
 
-    datasets_validation0 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
+    datasets_validation0 = np.load("saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
     examples_validation0, labels_validation0 = datasets_validation0
 
-    datasets_validation1 = np.load("/content/drive/MyDrive/BME544Project/saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
+    datasets_validation1 = np.load("saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
     examples_validation1, labels_validation1 = datasets_validation1
     # print("SHAPE", np.shape(examples_training))
 
@@ -547,14 +560,14 @@ if __name__ == '__main__':
     bal_1 = []
     f1_0 = []
     f1_1 = []
-    cm_0 = []
-    cm_1 = []
-    report_0 = []
-    report_1 = []
+    precision_0 = []
+    precision_1 = []
+    recall_0 = []
+    recall_1 = []
 
     for i in range(3):
         print("ROUND: ", i)
-        accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, conf_matrix_0, conf_matrix_1, report_0, report_1 = calculate_fitness(
+        accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, precision_score_0, precision_score_1, recall_score_0, recall_score_1 = calculate_fitness(
             examples_training, labels_training,
             examples_validation0, labels_validation0,
             examples_validation1, labels_validation1)
@@ -569,60 +582,45 @@ if __name__ == '__main__':
         bal_1.append(balanced_accuracy_1)
         f1_0.append(f1_macro_0)
         f1_1.append(f1_macro_1)
-        cm_0.append(conf_matrix_0)
-        cm_1.append(conf_matrix_1)
+        precision_0.append(precision_score_0)
+        precision_1.append(precision_score_1)
+        recall_0.append(recall_score_0)
+        recall_1.append(recall_score_1)
 
-        result_path = "cnn_source_results_3.txt"
+        result_name = "cnn_source_results_4.txt"
 
-        with open(result_path, "a") as myfile:
+        with open(result_name, "w") as myfile:
             myfile.write("CNN STFT: \n\n")
             myfile.write("Accuracy 0: \n")
-            myfile.write(str(np.mean(acc_0, axis=0)) + '\n')
             myfile.write(str(np.mean(acc_0)) + '\n')
             myfile.write("Balanced Accuracy Score 0: \n")
-            myfile.write(str(np.mean(bal_0, axis=0)) + '\n')
             myfile.write(str(np.mean(bal_0)) + '\n')
             myfile.write("F1 Macro 0: \n")
-            myfile.write(str(np.mean(f1_0, axis=0)) + '\n')
-            myfile.write(str(np.mean(f1_0)) + '\n')
-            myfile.write("Confusion Matrix 0: \n")
-            myfile.write(str(np.mean(cm_0, axis=0)) + '\n')
-            myfile.write(str(np.mean(np.mean(cm_0, axis=0))) + '\n')
+            myfile.write(str(np.mean(f1_0)) + '\n\n')
+            myfile.write("Precision 1: \n")
+            myfile.write(str(np.mean(precision_0)) + '\n')
+            myfile.write("Recall: \n")
+            myfile.write(str(np.mean(recall_0)) + '\n\n')
 
             myfile.write("Accuracy 1: \n")
-            myfile.write(str(np.mean(acc_1, axis=0)) + '\n')
             myfile.write(str(np.mean(acc_1)) + '\n')
             myfile.write("Balanced Accuracy Score 1: \n")
-            myfile.write(str(np.mean(bal_1, axis=0)) + '\n')
             myfile.write(str(np.mean(bal_1)) + '\n')
             myfile.write("F1 Macro 1: \n")
-            myfile.write(str(np.mean(f1_1, axis=0)) + '\n')
             myfile.write(str(np.mean(f1_1)) + '\n')
-            myfile.write("Confusion Matrix 1: \n")
-            myfile.write(str(np.mean(cm_1, axis=0)) + '\n')
-            myfile.write(str(np.mean(np.mean(cm_1, axis=0))) + '\n')
+            myfile.write("Precision 1: \n")
+            myfile.write(str(np.mean(precision_1)) + '\n')
+            myfile.write("Recall: \n")
+            myfile.write(str(np.mean(recall_1)) + '\n\n')
 
-            myfile.write("Average: \n")
-            myfile.write(str(np.mean(acc_0) + np.mean(acc_1) / 2.))
-            myfile.write("Balanced Accuracy Score: \n")
-            myfile.write(str(np.mean(bal_0) + np.mean(bal_1) / 2.))
-            myfile.write("F1 Macro: \n")
-            myfile.write(str(np.mean(f1_0) + np.mean(f1_1) / 2.))
-            myfile.write("Confusion Matrix: \n")
-            myfile.write(str(np.mean([np.mean(cm_0, axis=0), np.mean(cm_1, axis=0)], axis=0)) + '\n')
+            myfile.write("Average Accuracy: \n")
+            myfile.write(str(np.mean(acc_0) + np.mean(acc_1) / 2.) + '\n')
+            myfile.write("Average Balanced Accuracy Score: \n")
+            myfile.write(str(np.mean(bal_0) + np.mean(bal_1) / 2.) + '\n')
+            myfile.write("Average F1 Macro: \n")
+            myfile.write(str(np.mean(f1_0) + np.mean(f1_1) / 2.) + '\n')
+            myfile.write("Average Precision: \n")
+            myfile.write(str(np.mean(precision_0) + np.mean(precision_1) / 2.) + '\n')
+            myfile.write("Average Recall: \n")
+            myfile.write(str(np.mean(recall_0) + np.mean(recall_1) / 2.) + '\n')
             myfile.write("\n\n\n")
-
-            for report in report_0:
-                with open(result_path, "a") as myfile:
-                    myfile.write("Classification Report 0: \n")
-                    myfile.write(report)
-
-            for report in report_1:
-                with open(result_path, "a") as myfile:
-                    myfile.write("Classification Report 1: \n")
-                    myfile.write(report)
-
-        # print("ACCURACY FINAL TEST 0: ", test_0)
-        # print("ACCURACY FINAL TEST 0: ", np.mean(test_0))
-        # print("ACCURACY FINAL TEST 1: ", test_1)
-        # print("ACCURACY FINAL TEST 1: ", np.mean(test_1))
