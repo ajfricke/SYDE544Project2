@@ -1,5 +1,6 @@
 import numpy as np
-import Wavelet_CNN_Target_Network
+# import Wavelet_CNN_LSTM_Target_Network as Wavelet_CNN_Target_Network
+import Wavelet_CNN_Target_Network as Wavelet_CNN_Target_Network
 import torch
 from torch.utils.data import TensorDataset
 import torch.nn as nn
@@ -90,7 +91,7 @@ def calculate_pre_training(examples, labels):
                     dataloaders={"train": list_train_dataloader, "val": list_validation_dataloader},
                     precision=precision)
 
-def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
+def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=3, precision=1e-8):
     since = time.time()
 
     # Create a list of dictionaries that will hold the weights of the batch normalisation layers for each dataset
@@ -219,7 +220,7 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
     print('Best val loss: {:4f}'.format(best_loss))
 
     # Save the best weights found to file
-    torch.save(best_weights, 'original_best_pre_train_weights_target_wavelet.pt')
+    torch.save(best_weights, 'best_pre_train_weights_target_wavelet.pt')
 
 def calculate_fitness(examples_training, labels_training, examples_test_0, labels_test_0, examples_test_1,
                       labels_test_1):
@@ -286,7 +287,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         test_0_loader = torch.utils.data.DataLoader(test_0, batch_size=1, shuffle=False)
         test_1_loader = torch.utils.data.DataLoader(test_1, batch_size=1, shuffle=False)
 
-        pre_trained_weights = torch.load('original_best_pre_train_weights_target_wavelet.pt')
+        pre_trained_weights = torch.load('best_pre_train_weights_target_wavelet.pt')
 
         cnn = Wavelet_CNN_Target_Network.TargetNetwork(number_of_class=7,
                                                        weights_pre_trained_cnn=pre_trained_weights)
@@ -489,7 +490,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
         time_elapsed // 60, time_elapsed % 60))
     # print('Best val loss: {:4f}'.format(best_loss))
     # Save to file the best weights found
-    torch.save(best_weights, '/content/drive/MyDrive/BME544Project/best_weights_source_wavelet.pt')
+    torch.save(best_weights, 'best_weights_source_wavelet_target.pt')
     # load best model weights
     cnn.load_state_dict(copy.deepcopy(best_weights))
     cnn.eval()
@@ -523,7 +524,7 @@ if __name__ == '__main__':
     # datasets = [examples, labels]
     #
     # pickle.dump(datasets, open("saved_pre_training_dataset_pickle.p", "wb"))
-
+    #
     # np.save("saved_pre_training_dataset.p", datasets)
 
     # And here if the pre-training dataset was already processed and saved
@@ -533,7 +534,7 @@ if __name__ == '__main__':
     datasets_pre_training = np.load("saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
     examples_pre_training, labels_pre_training = datasets_pre_training
 
-    # calculate_pre_training(examples_pre_training, labels_pre_training)
+    calculate_pre_training(examples_pre_training, labels_pre_training)
 
     # And here if the pre-training of the network was already completed.
 

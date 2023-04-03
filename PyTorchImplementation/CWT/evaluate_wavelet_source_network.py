@@ -1,5 +1,6 @@
 import numpy as np
-import Wavelet_CNN_Source_Network
+import Wavelet_CNN__LSTM_Source_Network as Wavelet_CNN_Source_Network
+# import Wavelet_CNN_Source_Network as Wavelet_CNN_Source_Network
 from torch.utils.data import TensorDataset
 import torch.nn as nn
 import torch.optim as optim
@@ -7,7 +8,7 @@ import torch
 from torch.autograd import Variable
 import time
 from scipy.stats import mode
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay
 import torch.nn.functional as f
 import load_evaluation_dataset
@@ -318,6 +319,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=50
     print('Best val loss: {:4f}'.format(best_loss))
     # load best model weights
     cnn_weights = torch.load('best_weights_source_wavelet.pt')
+    # cnn_weights = torch.load('best_weights_source_wavelet.pt', map_location=torch.device('cpu'))
     cnn.load_state_dict(cnn_weights)
     cnn.eval()
     return cnn

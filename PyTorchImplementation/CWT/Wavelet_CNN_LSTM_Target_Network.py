@@ -65,10 +65,10 @@ class SourceNetwork(nn.Module):
         self._second_part_relu1 = nn.ModuleList(self._second_part_relu1)
         self._second_part_batch_norm = nn.ModuleList(self._second_part_batch_norm)
 
-        self._conv3 = nn.Conv2d(24, 48, kernel_size=2)
-        self._batch_norm_3 = nn.BatchNorm2d(48, eps=1e-4)
+        self._conv3 = nn.LSTM(4, 1, 1, batch_first=True)
+        self._batch_norm_3 = nn.BatchNorm1d(24, eps=1e-4)
         #self._prelu_3 = pelu(parameters_dimensions=(1, 48, 1, 1))
-        self._prelu_3 = nn.PReLU(48)
+        self._prelu_3 = nn.PReLU(24)
         self._dropout3 = McDropout.McDropout(p=dropout_rate)
 
         self._fc1 = nn.Linear(48, 100)
@@ -123,8 +123,10 @@ class SourceNetwork(nn.Module):
 
         second_merge = self.second_parallel(first_merge_1, 0) + self.second_parallel(first_merge_2, 1)
 
-
-        after_conv = self._dropout3(self._prelu_3(self._batch_norm_3(self._conv3(second_merge))))
+        second_merge = second_merge.flatten(start_dim=-2)
+        second_merge, _ = self._conv3(second_merge)
+        after_conv = self._dropout3(self._prelu_3(self._batch_norm_3(second_merge)))
+        # after_conv = self._dropout3(self._prelu_3(self._batch_norm_3(self._conv3(second_merge))))
 
         flatten_tensor = after_conv.view(-1, 48)
 
@@ -218,10 +220,10 @@ class TargetNetwork(nn.Module):
         self._second_part_target_relu1 = nn.ModuleList(self._second_part_target_relu1)
         self._second_part_target_batch_norm = nn.ModuleList(self._second_part_target_batch_norm)
 
-        self._target_conv3 = nn.Conv2d(24, 48, kernel_size=2)
-        self._target_batch_norm_3 = nn.BatchNorm2d(48, eps=1e-4)
+        self._target_conv3 = nn.LSTM(4,2,1, batch_first=True)
+        self._target_batch_norm_3 = nn.BatchNorm1d(24, eps=1e-4)
         #self._prelu_3 = pelu(parameters_dimensions=(1, 48, 1, 1))
-        self._target_prelu_3 = nn.PReLU(48)
+        self._target_prelu_3 = nn.PReLU(24)
         self._target_dropout3 = McDropout.McDropout()
 
         self._target_fc1 = nn.Linear(48, 100)
@@ -331,13 +333,21 @@ class TargetNetwork(nn.Module):
 
         second_merge = first_branch_2 + second_branch_2 + dropout2_source_first_branch +self._source_weight_merge_3(dropout2_source_second_branch)
 
+        second_merge = second_merge.flatten(start_dim=-2)
+        second_merge, _ = self._target_conv3(second_merge)
+
+        '''after_conv = self._target_dropout3(
+            self._target_prelu_3(self._target_batch_norm_3(self._target_conv3(second_merge))))'''
         after_conv = self._target_dropout3(
-            self._target_prelu_3(self._target_batch_norm_3(self._target_conv3(second_merge))))
+            self._target_prelu_3(self._target_batch_norm_3(second_merge)))
 
         second_merge_source = dropout2_source_first_branch + dropout2_source_second_branch
-        after_conv_source = self._source_network["_dropout3"](
+        '''after_conv_source = self._source_network["_dropout3"](
             self._source_network["_prelu_3"](self._source_network["_batch_norm_3"](
-                self._source_network["_conv3"](second_merge_source))))
+                self._source_network["_conv3"](second_merge_source))))'''
+        source_conv3_out, _ = self._source_network["_conv3"](second_merge_source)
+        after_conv_source = self._source_network["_dropout3"](
+            self._source_network["_prelu_3"](self._source_network["_batch_norm_3"](source_conv3_out)))
 
         conv_finished = after_conv + self._source_weight_merge_4(after_conv_source)
 
