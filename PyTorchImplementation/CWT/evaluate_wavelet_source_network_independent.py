@@ -49,8 +49,6 @@ def scramble(examples, labels, second_labels=[]):
 
 def calculate_fitness(examples_training, labels_training, examples_test_0, labels_test_0, examples_test_1,
                       labels_test_1):
-    # accuracy_test0 = []
-    # accuracy_test1 = []
     accuracy_0 = []
     accuracy_1 = []
     balanced_accuracy_0 = []
@@ -61,60 +59,56 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
     precision_score_1 = []
     recall_score_0 = []
     recall_score_1 = []
-    # conf_matrix_0 = []
-    # conf_matrix_1 = []
-    # report_0 = []
-    # report_1 = []
 
     # initialized_weights = np.load("initialized_weights.npy")
-    for dataset_index in range(0, 17):
-    #for dataset_index in [11, 15]:
-        X_fine_tune_train, Y_fine_tune_train = [], []
-        for label_index in range(len(labels_training)):
-            if label_index == dataset_index:
-                print("Current dataset test : ", dataset_index)
-                for example_index in range(len(examples_training[label_index])):
-                    if (example_index < 28):
-                        X_fine_tune_train.extend(examples_training[label_index][example_index])
-                        Y_fine_tune_train.extend(labels_training[label_index][example_index])
-        X_test_0, Y_test_0 = [], []
-        for label_index in range(len(labels_test_0)):
-            if label_index == dataset_index:
-                for example_index in range(len(examples_test_0[label_index])):
-                    X_test_0.extend(examples_test_0[label_index][example_index])
-                    Y_test_0.extend(labels_test_0[label_index][example_index])
+    for test_patient in range(17):
+        X_train = []
+        y_train = []
+        X_test, Y_test = [], []
 
-        X_test_1, Y_test_1 = [], []
-        for label_index in range(len(labels_test_1)):
-            if label_index == dataset_index:
-                for example_index in range(len(examples_test_1[label_index])):
-                    X_test_1.extend(examples_test_1[label_index][example_index])
-                    Y_test_1.extend(labels_test_1[label_index][example_index])
+        for j in range(17):
+            for k in range(len(examples_training[j])):
+                if j == test_patient:
+                    X_test.extend(examples_training[j][k])
+                    Y_test.extend(labels_training[j][k])
+                    X_test.extend(examples_test_0[j][k])
+                    Y_test.extend(labels_test_0[j][k])
+                    X_test.extend(examples_test_1[j][k])
+                    Y_test.extend(labels_test_1[j][k])
+                else:
+                    if k < 28:
+                        X_train.extend(examples_training[j][k])
+                        y_train.extend(labels_training[j][k])
 
-        X_fine_tune, Y_fine_tune = scramble(X_fine_tune_train, Y_fine_tune_train)
-        valid_examples = X_fine_tune[0:int(len(X_fine_tune) * 0.1)]
-        labels_valid = Y_fine_tune[0:int(len(Y_fine_tune) * 0.1)]
+        X_train, y_train = scramble(X_train, y_train)
+        X_test, y_test = scramble(X_test, Y_test)
 
-        X_fine_tune = X_fine_tune[int(len(X_fine_tune) * 0.1):]
-        Y_fine_tune = Y_fine_tune[int(len(Y_fine_tune) * 0.1):]
+        X_train = X_train[0:int(len(X_train) * 0.2)]
+        y_train = y_train[0:int(len(y_train) * 0.2)]
 
-        print(torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)).size(0))
+        X_acc_train = X_train[0:int(len(X_train) * 0.9)]
+        y_acc_train = y_train[0:int(len(y_train) * 0.9)]
+
+        X_fine_tune = X_train[int(len(X_train) * 0.9):]
+        y_fine_tune = y_train[int(len(y_train) * 0.9):]
+
+        X_test = X_test[0:int(len(X_test) * 0.2)]
+        y_test = y_test[0:int(len(y_test) * 0.2)]
+
+        print(torch.from_numpy(np.array(y_fine_tune, dtype=np.int32)).size(0))
         print(np.shape(np.array(X_fine_tune, dtype=np.float32)))
-        train = TensorDataset(torch.from_numpy(np.array(X_fine_tune, dtype=np.float32)),
-                              torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)))
-        validation = TensorDataset(torch.from_numpy(np.array(valid_examples, dtype=np.float32)),
-                                   torch.from_numpy(np.array(labels_valid, dtype=np.int32)))
+        train = TensorDataset(torch.from_numpy(np.array(X_acc_train, dtype=np.float32)),
+                              torch.from_numpy(np.array(y_acc_train, dtype=np.int32)))
+        validation = TensorDataset(torch.from_numpy(np.array(X_fine_tune, dtype=np.float32)),
+                                   torch.from_numpy(np.array(y_fine_tune, dtype=np.int32)))
 
         trainloader = torch.utils.data.DataLoader(train, batch_size=128, shuffle=True)
         validationloader = torch.utils.data.DataLoader(validation, batch_size=128, shuffle=True)
 
-        test_0 = TensorDataset(torch.from_numpy(np.array(X_test_0, dtype=np.float32)),
-                               torch.from_numpy(np.array(Y_test_0, dtype=np.int32)))
-        test_1 = TensorDataset(torch.from_numpy(np.array(X_test_1, dtype=np.float32)),
-                               torch.from_numpy(np.array(Y_test_1, dtype=np.int32)))
+        test = TensorDataset(torch.from_numpy(np.array(X_test, dtype=np.float32)),
+                               torch.from_numpy(np.array(y_test, dtype=np.int32)))
 
-        test_0_loader = torch.utils.data.DataLoader(test_0, batch_size=1, shuffle=False)
-        test_1_loader = torch.utils.data.DataLoader(test_1, batch_size=1, shuffle=False)
+        test_loader = torch.utils.data.DataLoader(test, batch_size=1, shuffle=False)
 
         cnn = Wavelet_CNN_Source_Network.Net(number_of_class=7, batch_size=128, number_of_channel=12,
                                              learning_rate=0.0404709, dropout=.5)
@@ -135,7 +129,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         # Create empty arrays to store predicted and ground truth labels
         all_predicted_labels_0 = []
         all_ground_truth_labels_0 = []
-        for k, data_test_0 in enumerate(test_0_loader, 0):
+        for k, data_test_0 in enumerate(test_loader, 0):
             # get the inputs
             inputs_test_0, ground_truth_test_0 = data_test_0
             inputs_test_0, ground_truth_test_0 = Variable(inputs_test_0), Variable(ground_truth_test_0)
@@ -168,7 +162,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_Confusion_Matrix_0_{dataset_index}')
+        plt.savefig(f'CNN_Confusion_Matrix_0_{test_patient}')
         # conf_matrix_0.append(confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0))
         # report_0.append(classification_report(all_ground_truth_labels_0, all_predicted_labels_0))
 
@@ -178,49 +172,9 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         total = 0
         correct_prediction_test_1 = 0
         # Create empty arrays to store predicted and ground truth labels
-        all_predicted_labels_1 = []
-        all_ground_truth_labels_1 = []
-        for k, data_test_1 in enumerate(test_1_loader, 0):
-            # get the inputs
-            inputs_test_1, ground_truth_test_1 = data_test_1
-            inputs_test_1, ground_truth_test_1 = Variable(inputs_test_1), Variable(ground_truth_test_1)
 
-            concat_input = inputs_test_1
-            for i in range(20):
-                concat_input = torch.cat([concat_input, inputs_test_1])
-            outputs_test_1 = cnn(concat_input)
-            _, predicted = torch.max(outputs_test_1.data, 1)
-            correct_prediction_test_1 += (mode(predicted.cpu().numpy())[0][0] ==
-                                          ground_truth_test_1.data.cpu().numpy()).sum()
-
-            # Append predicted and ground truth labels to the arrays
-            all_predicted_labels_1.append(mode(predicted.cpu().numpy())[0][0])
-            all_ground_truth_labels_1.append(ground_truth_test_1.data.cpu().numpy())
-
-            total += ground_truth_test_1.size(0)
-
-        # Convert the arrays to NumPy arrays
-        all_predicted_labels_1 = np.array(all_predicted_labels_1)
-        all_ground_truth_labels_1 = np.concatenate(all_ground_truth_labels_1)
-
-        # Calculate the metrics
-        accuracy_1.append(accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
-        balanced_accuracy_1.append(balanced_accuracy_score(all_ground_truth_labels_1, all_predicted_labels_1))
-        f1_macro_1.append(f1_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
-        precision_score_1.append(precision_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
-        recall_score_1.append(recall_score(all_ground_truth_labels_1, all_predicted_labels_1, average='macro'))
-        cm = confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1, number_class=7)
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-        plt.figure()
-        disp.plot()
-        plt.savefig(f'CNN_Confusion_Matrix_1_{dataset_index}')
-        # conf_matrix_1.append(confusion_matrix(all_ground_truth_labels_1, all_predicted_labels_1))
-        # report_1.append(classification_report(all_ground_truth_labels_1, all_predicted_labels_1))
-        print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
-        # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
 
     print("AVERAGE ACCURACY TEST 0 %.3f" % np.array(accuracy_0).mean())
-    print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
     return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, precision_score_0, precision_score_1, recall_score_0, recall_score_1
 
 

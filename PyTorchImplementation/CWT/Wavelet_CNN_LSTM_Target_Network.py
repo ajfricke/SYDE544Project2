@@ -65,7 +65,7 @@ class SourceNetwork(nn.Module):
         self._second_part_relu1 = nn.ModuleList(self._second_part_relu1)
         self._second_part_batch_norm = nn.ModuleList(self._second_part_batch_norm)
 
-        self._conv3 = nn.LSTM(4, 1, 1, batch_first=True)
+        self._conv3 = nn.LSTM(4, 2, 1, batch_first=True)
         self._batch_norm_3 = nn.BatchNorm1d(24, eps=1e-4)
         #self._prelu_3 = pelu(parameters_dimensions=(1, 48, 1, 1))
         self._prelu_3 = nn.PReLU(24)

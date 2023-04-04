@@ -262,25 +262,25 @@ class TargetNetwork(nn.Module):
 
         # Freeze the weights of the pre-trained model so they do not change during training of the target network
         # (except for the BN layers that will be trained as normal).
-        print("Output :", pre_trained_model._list_conv2_first_part[0])
+        # print("Output :", pre_trained_model._list_conv2_first_part[0])
         for child in pre_trained_model.children():
             if isinstance(child, nn.ModuleList):  # We have to go one step deeper to get to the actual modules
                 for module in child:
-                    if isinstance(module, McDropout):
+                    if isinstance(module, type(McDropout)):
                         module.update_p(dropout)
                     elif isinstance(module, nn.BatchNorm2d) is False:
-                        print(module)
+                        # print(module)
                         for param in module.parameters():
                             param.requires_grad = False
             else:
-                if isinstance(child, McDropout):
+                if isinstance(child, type(McDropout)):
                     child.update_p(dropout)
                 elif isinstance(child, nn.BatchNorm2d) is False:
                     for param in child.parameters():
                         param.requires_grad = False
 
         self._source_network = pre_trained_model._modules
-        print(self._source_network.keys())
+        # print(self._source_network.keys())
 
 
 
