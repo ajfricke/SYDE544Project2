@@ -103,7 +103,7 @@ def calculate_pre_training(examples, labels):
                     dataloaders={"train": list_train_dataloader, "val": list_validation_dataloader},
                     precision=precision)
 
-def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=3, precision=1e-8):
+def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=10, precision=1e-8):
     since = time.time()
 
     # Create a list of dictionaries that will hold the weights of the batch normalisation layers for each dataset
@@ -495,7 +495,7 @@ if __name__ == '__main__':
     datasets_pre_training = np.load("saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
     examples_pre_training, labels_pre_training = datasets_pre_training
 
-    # calculate_pre_training(examples_pre_training, labels_pre_training)
+    calculate_pre_training(examples_pre_training, labels_pre_training)
 
     # And here if the pre-training of the network was already completed.
 
