@@ -1,6 +1,6 @@
 import numpy as np
-# import Wavelet_CNN__LSTM_Source_Network as Wavelet_CNN_Source_Network
-import Wavelet_CNN_Source_Network as Wavelet_CNN_Source_Network
+import Wavelet_CNN__LSTM_Source_Network as Wavelet_CNN_Source_Network
+# import Wavelet_CNN_Source_Network as Wavelet_CNN_Source_Network
 from torch.utils.data import TensorDataset
 import torch.nn as nn
 import torch.optim as optim
@@ -52,11 +52,12 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
     accuracy = []
     balanced_accuracy = []
     f1_macro = []
-    precision_score = []
-    recall_score = []
+    prec_score = []
+    rec_score = []
 
     # initialized_weights = np.load("initialized_weights.npy")
     for test_patient in range(17):
+        print(f"Test Patient: {test_patient}")
         X_train = []
         Y_train = []
         X_test, Y_test = [], []
@@ -90,8 +91,8 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         X_test = X_test[0:int(len(X_test) * 0.2)]
         Y_test = Y_test[0:int(len(Y_test) * 0.2)]
 
-        print(torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)).size(0))
-        print(np.shape(np.array(X_fine_tune, dtype=np.float32)))
+        # print(torch.from_numpy(np.array(Y_fine_tune, dtype=np.int32)).size(0))
+        # print(np.shape(np.array(X_fine_tune, dtype=np.float32)))
         train = TensorDataset(torch.from_numpy(np.array(X_acc_train, dtype=np.float32)),
                               torch.from_numpy(np.array(Y_acc_train, dtype=np.int32)))
         validation = TensorDataset(torch.from_numpy(np.array(X_fine_tune, dtype=np.float32)),
@@ -151,13 +152,13 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         accuracy.append(accuracy_score(all_ground_truth_labels, all_predicted_labels))
         balanced_accuracy.append(balanced_accuracy_score(all_ground_truth_labels, all_predicted_labels))
         f1_macro.append(f1_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
-        precision_score.append(precision_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
-        recall_score.append(recall_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
+        prec_score.append(precision_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
+        rec_score.append(recall_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
         cm = confusion_matrix(all_ground_truth_labels, all_predicted_labels, number_class=7)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_Independent_Confusion_Matrix_{test_patient}')
+        plt.savefig(f'CNN_LSTM_Independent_Confusion_Matrix_{test_patient}')
         # conf_matrix_0.append(confusion_matrix(all_ground_truth_labels_0, all_predicted_labels_0))
         # report_0.append(classification_report(all_ground_truth_labels_0, all_predicted_labels_0))
 
@@ -165,7 +166,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         # accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
 
     print("AVERAGE ACCURACY TEST %.3f" % np.array(accuracy).mean())
-    return accuracy, balanced_accuracy, f1_macro, precision_score, recall_score
+    return accuracy, balanced_accuracy, f1_macro, prec_score, rec_score
 
 
 def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=100, precision=1e-8):
@@ -312,11 +313,12 @@ if __name__ == '__main__':
     acc = []
     bal = []
     f1 = []
-    precision = []
-    recall = []
+    prec = []
+    rec = []
+
     for i in range(3):
         print("ROUND: ", i)
-        accuracy, balanced_accuracy, f1_macro, precision_score, recall_score = calculate_fitness(examples_training, labels_training,
+        accuracy, balanced_accuracy, f1_macro, prec_score, rec_score = calculate_fitness(examples_training, labels_training,
                                                                examples_validation0, labels_validation0,
                                                                examples_validation1, labels_validation1)
         print(accuracy)
@@ -324,10 +326,10 @@ if __name__ == '__main__':
         acc.append(accuracy)
         bal.append(balanced_accuracy)
         f1.append(f1_macro)
-        precision.append(precision_score)
-        recall.append(recall_score)
+        prec.append(prec_score)
+        rec.append(rec_score)
 
-        result_name = "cnn_source_independent_results.txt"
+        result_name = "cnn_lstm_source_independent_results.txt"
 
         with open(result_name, "w") as myfile:
             myfile.write("CNN STFT: \n\n")
@@ -338,6 +340,6 @@ if __name__ == '__main__':
             myfile.write("F1 Macro: \n")
             myfile.write(str(np.mean(f1)) + '\n')
             myfile.write("Precision: \n")
-            myfile.write(str(np.mean(precision)) + '\n')
+            myfile.write(str(np.mean(prec)) + '\n')
             myfile.write("Recall: \n")
-            myfile.write(str(np.mean(recall)) + '\n\n')
+            myfile.write(str(np.mean(rec)) + '\n\n')

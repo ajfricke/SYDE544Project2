@@ -239,11 +239,12 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
     accuracy = []
     balanced_accuracy = []
     f1_macro = []
-    precision_score = []
-    recall_score = []
+    prec_score = []
+    rec_score = []
 
     # initialized_weights = np.load("initialized_weights.npy")
     for test_patient in range(17):
+        print(test_patient)
         X_train = []
         Y_train = []
         X_test, Y_test = [], []
@@ -292,7 +293,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
 
         test_loader = torch.utils.data.DataLoader(test, batch_size=1, shuffle=False)
 
-        pre_trained_weights = torch.load('best_pre_train_weights_target_wavelet.pt')
+        pre_trained_weights = torch.load('best_pre_train_weights_target_wavelet.pt', map_location=torch.device('cpu'))
 
         cnn = Wavelet_CNN_Target_Network.TargetNetwork(number_of_class=7,
                                                        weights_pre_trained_cnn=pre_trained_weights)
@@ -340,18 +341,18 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         accuracy.append(accuracy_score(all_ground_truth_labels, all_predicted_labels))
         balanced_accuracy.append(balanced_accuracy_score(all_ground_truth_labels, all_predicted_labels))
         f1_macro.append(f1_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
-        precision_score.append(precision_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
-        recall_score.append(recall_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
+        prec_score.append(precision_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
+        rec_score.append(recall_score(all_ground_truth_labels, all_predicted_labels, average='macro'))
         cm = confusion_matrix(all_ground_truth_labels, all_predicted_labels, number_class=7)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_TF_Confusion_Matrix_0_{test_patient}')
+        plt.savefig(f'CNN_LSTM_Independent_TF_Confusion_Matrix_{test_patient}')
 
-        print("ACCURACY TEST FINAL : %.3f %%" % (100 * float(correct_prediction_test) / float(total)))
+        print("ACCURACY TEST FINAL: %.3f %%" % (100 * float(correct_prediction_test) / float(total)))
 
     print("AVERAGE ACCURACY %.3f" % np.array(accuracy).mean())
-    return accuracy, balanced_accuracy, f1_macro, precision_score, recall_score
+    return accuracy, balanced_accuracy, f1_macro, prec_score, rec_score
 
 def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=75, precision=1e-8):
     since = time.time()
@@ -494,7 +495,7 @@ if __name__ == '__main__':
     datasets_pre_training = np.load("saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
     examples_pre_training, labels_pre_training = datasets_pre_training
 
-    calculate_pre_training(examples_pre_training, labels_pre_training)
+    # calculate_pre_training(examples_pre_training, labels_pre_training)
 
     # And here if the pre-training of the network was already completed.
 
@@ -515,11 +516,12 @@ if __name__ == '__main__':
     acc = []
     bal = []
     f1 = []
-    precision = []
-    recall = []
+    prec = []
+    rec = []
+
     for i in range(3):
         print("ROUND: ", i)
-        accuracy, balanced_accuracy, f1_macro, precision_score, recall_score = calculate_fitness(examples_training,
+        accuracy, balanced_accuracy, f1_macro, prec_score, rec_score = calculate_fitness(examples_training,
                                                                                                  labels_training,
                                                                                                  examples_validation0,
                                                                                                  labels_validation0,
@@ -530,10 +532,10 @@ if __name__ == '__main__':
         acc.append(accuracy)
         bal.append(balanced_accuracy)
         f1.append(f1_macro)
-        precision.append(precision_score)
-        recall.append(recall_score)
+        prec.append(prec_score)
+        rec.append(rec_score)
 
-        result_name = "cnn_target_independent_results.txt"
+        result_name = "cnn_lstm_target_independent_results.txt"
 
         with open(result_name, "w") as myfile:
             myfile.write("CNN STFT: \n\n")
@@ -544,6 +546,6 @@ if __name__ == '__main__':
             myfile.write("F1 Macro: \n")
             myfile.write(str(np.mean(f1)) + '\n')
             myfile.write("Precision: \n")
-            myfile.write(str(np.mean(precision)) + '\n')
+            myfile.write(str(np.mean(prec)) + '\n')
             myfile.write("Recall: \n")
-            myfile.write(str(np.mean(recall)) + '\n\n')
+            myfile.write(str(np.mean(rec)) + '\n\n')

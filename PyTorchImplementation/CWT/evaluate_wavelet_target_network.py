@@ -353,7 +353,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_TF_Confusion_Matrix_0_{dataset_index}')
+        plt.savefig(f'CNN_LSTM_TF_Confusion_Matrix_0_{dataset_index}')
 
         print("ACCURACY TEST_0 FINAL : %.3f %%" % (100 * float(correct_prediction_test_0) / float(total)))
         # accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
@@ -396,7 +396,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_TF_Confusion_Matrix_1_{dataset_index}')
+        plt.savefig(f'CNN_LSTM_TF_Confusion_Matrix_1_{dataset_index}')
 
         print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
         # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
