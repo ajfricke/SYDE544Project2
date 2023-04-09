@@ -97,10 +97,10 @@ class SourceNetwork(nn.Module):
     def initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                torch.nn.init.kaiming_normal(m.weight)
+                torch.nn.init.kaiming_normal_(m.weight)
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
-                torch.nn.init.kaiming_normal(m.weight)
+                torch.nn.init.kaiming_normal_(m.weight)
                 m.bias.data.zero_()
 
     def forward(self, x):
@@ -245,7 +245,7 @@ class TargetNetwork(nn.Module):
         self._source_weight_merge_1 = ScaleLayer.ScaleLayer((1, 12, 1, 1))
         self._source_weight_merge_2 = ScaleLayer.ScaleLayer((1, 12, 1, 1))
         self._source_weight_merge_3 = ScaleLayer.ScaleLayer((1, 24, 1, 1))
-        self._source_weight_merge_4 = ScaleLayer.ScaleLayer((1, 48, 1, 1))
+        self._source_weight_merge_4 = ScaleLayer.ScaleLayer((1, 24, 1, 1))
         self._source_weight_merge_5 = ScaleLayer.ScaleLayer((1, 100))
         self._source_weight_merge_6 = ScaleLayer.ScaleLayer((1, 100))
 
@@ -268,14 +268,14 @@ class TargetNetwork(nn.Module):
         for child in pre_trained_model.children():
             if isinstance(child, nn.ModuleList):  # We have to go one step deeper to get to the actual modules
                 for module in child:
-                    if isinstance(module, McDropout):
+                    if isinstance(module, McDropout.McDropout):
                         module.update_p(dropout)
                     elif isinstance(module, nn.BatchNorm2d) is False:
                         print(module)
                         for param in module.parameters():
                             param.requires_grad = False
             else:
-                if isinstance(child, McDropout):
+                if isinstance(child, McDropout.McDropout):
                     child.update_p(dropout)
                 elif isinstance(child, nn.BatchNorm2d) is False:
                     for param in child.parameters():
@@ -333,7 +333,7 @@ class TargetNetwork(nn.Module):
 
         second_merge = first_branch_2 + second_branch_2 + dropout2_source_first_branch +self._source_weight_merge_3(dropout2_source_second_branch)
 
-        second_merge = second_merge.flatten(start_dim=-2)
+        second_merge = torch.flatten(second_merge,start_dim=-2)
         second_merge, _ = self._target_conv3(second_merge)
 
         '''after_conv = self._target_dropout3(
@@ -345,11 +345,16 @@ class TargetNetwork(nn.Module):
         '''after_conv_source = self._source_network["_dropout3"](
             self._source_network["_prelu_3"](self._source_network["_batch_norm_3"](
                 self._source_network["_conv3"](second_merge_source))))'''
+        second_merge_source = torch.flatten(second_merge_source,start_dim=-2)
         source_conv3_out, _ = self._source_network["_conv3"](second_merge_source)
         after_conv_source = self._source_network["_dropout3"](
             self._source_network["_prelu_3"](self._source_network["_batch_norm_3"](source_conv3_out)))
 
-        conv_finished = after_conv + self._source_weight_merge_4(after_conv_source)
+        after_conv = after_conv.unsqueeze(-1)
+        #print(after_conv.shape)
+        test = self._source_weight_merge_4(after_conv)
+        #print(test.shape)
+        conv_finished = after_conv + test
 
         flatten_tensor = conv_finished.view(-1, 48)
         flatten_tensor_source = after_conv_source.view(-1, 48)

@@ -103,7 +103,7 @@ def calculate_pre_training(examples, labels):
                     dataloaders={"train": list_train_dataloader, "val": list_validation_dataloader},
                     precision=precision)
 
-def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=10, precision=1e-8):
+def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
     since = time.time()
 
     # Create a list of dictionaries that will hold the weights of the batch normalisation layers for each dataset
@@ -232,7 +232,7 @@ def pre_train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epoch
     print('Best val loss: {:4f}'.format(best_loss))
 
     # Save the best weights found to file
-    torch.save(best_weights, 'best_pre_train_weights_target_wavelet.pt')
+    torch.save(best_weights, '/content/drive/My Drive/544_Final_Project/best_pre_train_weights_target_wavelet.pt')
 
 def calculate_fitness(examples_training, labels_training, examples_test_0, labels_test_0, examples_test_1,
                       labels_test_1):
@@ -299,7 +299,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         test_0_loader = torch.utils.data.DataLoader(test_0, batch_size=1, shuffle=False)
         test_1_loader = torch.utils.data.DataLoader(test_1, batch_size=1, shuffle=False)
 
-        pre_trained_weights = torch.load('best_pre_train_weights_target_wavelet.pt')
+        pre_trained_weights = torch.load('/content/drive/My Drive/544_Final_Project/best_pre_train_weights_target_wavelet_0.pt')
 
         cnn = Wavelet_CNN_Target_Network.TargetNetwork(number_of_class=7,
                                                        weights_pre_trained_cnn=pre_trained_weights)
@@ -353,7 +353,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_LSTM_TF_Confusion_Matrix_0_{dataset_index}')
+        plt.savefig(f'/content/drive/My Drive/544_Final_Project/CNN_LSTM_TF_Confusion_Matrix_0_{dataset_index}')
 
         print("ACCURACY TEST_0 FINAL : %.3f %%" % (100 * float(correct_prediction_test_0) / float(total)))
         # accuracy_test0.append(100 * float(correct_prediction_test_0) / float(total))
@@ -396,7 +396,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         plt.figure()
         disp.plot()
-        plt.savefig(f'CNN_LSTM_TF_Confusion_Matrix_1_{dataset_index}')
+        plt.savefig(f'/content/drive/My Drive/544_Final_Project/CNN_LSTM_TF_Confusion_Matrix_1_{dataset_index}')
 
         print("ACCURACY TEST_1 FINAL : %.3f %%" % (100 * float(correct_prediction_test_1) / float(total)))
         # accuracy_test1.append(100 * float(correct_prediction_test_1) / float(total))
@@ -405,7 +405,7 @@ def calculate_fitness(examples_training, labels_training, examples_test_0, label
     # print("AVERAGE ACCURACY TEST 1 %.3f" % np.array(accuracy_1).mean())
     return accuracy_0, accuracy_1, balanced_accuracy_0, balanced_accuracy_1, f1_macro_0, f1_macro_1, precision_score_0, precision_score_1, recall_score_0, recall_score_1
 
-def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=75, precision=1e-8):
+def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8):
     since = time.time()
 
     best_loss = float('inf')
@@ -502,7 +502,7 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=75
         time_elapsed // 60, time_elapsed % 60))
     # print('Best val loss: {:4f}'.format(best_loss))
     # Save to file the best weights found
-    torch.save(best_weights, 'best_weights_source_wavelet_target.pt')
+    torch.save(best_weights, '/content/drive/My Drive/544_Final_Project/best_weights_source_wavelet_target.pt')
     # load best model weights
     cnn.load_state_dict(copy.deepcopy(best_weights))
     cnn.eval()
@@ -510,53 +510,57 @@ def train_model(cnn, criterion, optimizer, scheduler, dataloaders, num_epochs=75
 
 
 if __name__ == '__main__':
-
-    # examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
-    #                                             type='training0')
-    #
-    # datasets = [examples, labels]
-    # np.save("saved_dataset_training.p", datasets)
-    #
-    # examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
-    #                                             type='Validation0')
-    #
-    # datasets = [examples, labels]
-    # np.save("saved_dataset_test0.p", datasets)
-    #
-    # examples, labels = load_evaluation_dataset.read_data('EvaluationDataset',
-    #                                             type='Validation1')
-    #
-    # datasets = [examples, labels]
-    # np.save("saved_dataset_test1.p", datasets)
+    import os
+    if 'saved_evaluation_dataset_training_CWT.npy' not in os.listdir('/content/drive/My Drive/544_Final_Project/'):
+        examples, labels = load_evaluation_dataset.read_data('/content/drive/My Drive/544_Final_Project/MyoArmband/EvaluationDataset',
+                                                    type='training0')
+    
+        datasets = [examples, labels]
+        np.save("/content/drive/My Drive/544_Final_Project/saved_evaluation_dataset_training_CWT.npy", datasets)
+    
+    if 'saved_evaluation_dataset_test0_CWT.npy' not in os.listdir('/content/drive/My Drive/544_Final_Project/'):
+        examples, labels = load_evaluation_dataset.read_data('/content/drive/My Drive/544_Final_Project/MyoArmband/EvaluationDataset',
+                                                    type='Test0')
+        
+        datasets = [examples, labels]
+        np.save("/content/drive/My Drive/544_Final_Project/saved_evaluation_dataset_test0_CWT.npy", datasets)
+    
+    if 'saved_evaluation_dataset_test1_CWT.npy' not in os.listdir('/content/drive/My Drive/544_Final_Project/'):
+        examples, labels = load_evaluation_dataset.read_data('/content/drive/My Drive/544_Final_Project/MyoArmband/EvaluationDataset',
+                                                type='Test1')
+    
+        datasets = [examples, labels]
+        np.save("/content/drive/My Drive/544_Final_Project/saved_evaluation_dataset_test1_CWT.npy", datasets)
 
 
     # Comment between here
 
-    # examples, labels = load_pre_training_dataset.read_data('PreTrainingDataset')
-    # datasets = [examples, labels]
-    #
-    # pickle.dump(datasets, open("saved_pre_training_dataset_pickle.p", "wb"))
-    #
-    # np.save("saved_pre_training_dataset.p", datasets)
+    if 'saved_pre_training_dataset_CWT.npy' not in os.listdir('/content/drive/My Drive/544_Final_Project/'):
+        examples, labels = load_pre_training_dataset.read_data('/content/drive/My Drive/544_Final_Project/MyoArmband/PreTrainingDataset')
+        datasets = [examples, labels]
+        
+        np.save("/content/drive/My Drive/544_Final_Project/saved_pre_training_dataset_CWT.npy", datasets)
 
     # And here if the pre-training dataset was already processed and saved
 
     # Comment between here
+    
 
-    datasets_pre_training = np.load("saved_pre_training_dataset.p", encoding="bytes", allow_pickle=True)
+    datasets_pre_training = np.load("/content/drive/My Drive/544_Final_Project/saved_pre_training_dataset_CWT.npy", encoding="bytes", allow_pickle=True)
     examples_pre_training, labels_pre_training = datasets_pre_training
 
-    calculate_pre_training(examples_pre_training, labels_pre_training)
+    if 'best_pre_train_weights_target_wavelet_0.pt' not in os.listdir('/content/drive/My Drive/544_Final_Project/'):
+        calculate_pre_training(examples_pre_training, labels_pre_training)
 
     # And here if the pre-training of the network was already completed.
 
-    datasets_training = np.load("saved_dataset_training.p", encoding="bytes", allow_pickle=True)
+    datasets_training = np.load("/content/drive/My Drive/544_Final_Project/saved_evaluation_dataset_training_CWT.npy", encoding="bytes", allow_pickle=True)
     examples_training, labels_training = datasets_training
 
-    datasets_validation0 = np.load("saved_dataset_test0.p", encoding="bytes", allow_pickle=True)
+    datasets_validation0 = np.load("/content/drive/My Drive/544_Final_Project/saved_evaluation_dataset_test0_CWT.npy", encoding="bytes", allow_pickle=True)
     examples_validation0, labels_validation0 = datasets_validation0
 
-    datasets_validation1 = np.load("saved_dataset_test1.p", encoding="bytes", allow_pickle=True)
+    datasets_validation1 = np.load("/content/drive/My Drive/544_Final_Project/saved_evaluation_dataset_test1_CWT.npy", encoding="bytes", allow_pickle=True)
     examples_validation1, labels_validation1 = datasets_validation1
     # print("SHAPE", np.shape(examples_training))
 
@@ -600,7 +604,7 @@ if __name__ == '__main__':
         recall_0.append(recall_score_0)
         recall_1.append(recall_score_1)
 
-        result_name = "cnn_lstm_target_results.txt"
+        result_name = "/content/drive/My Drive/544_Final_Project/cnn_lstm_target_results.txt"
 
         with open(result_name, "w") as myfile:
             myfile.write("CNN STFT: \n\n")
